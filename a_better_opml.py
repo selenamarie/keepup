@@ -7,18 +7,6 @@ import sys
 
 import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument("followers", help="fetch follower ids and urls")
-parser.add_argument("friends", help="fetch friend ids and urls")
-parser.add_argument("output", help="file to write output to")
-parser.parse_args()
-
-consumer_key='12Jbo5GoDxd6dq6epffIQ'
-consumer_secret='00rIgEhKD944U3vt5vZdh0fXO4hEmQWY7vPOuyN7E'
-
-access_token='8859592-nEVysnaIw43LbNN9OozIfgrP4HOJM5BS2m0lIZwGM'
-access_token_secret='bH1QJRDKTsYymq4HOqL6XZwNMO6lTQumBphwOYPdbs'
-
 def detect_feeds_in_HTML(input_stream):
     """ examines an open text stream with HTML for referenced feeds.
 
@@ -52,69 +40,107 @@ def chunks(l, n):
         yield l[i:i+n]
 
 def friends(api):
-""" Takes an API, returns an array of IDs of friends """
+    """ Takes an API, returns an array of IDs of friends
+    """
     return api.friends_ids()
 
 def followers(api):
     return api.followers_ids()
 
+def process_feeds(tuples, user):
+   """ Take tuples from detect_feeds_in_HTML() and create an outline entry for opml
+   """
+   opml_outline_feed = '<outline text="%(title)s" title="%(title)s" type="rss" version="RSS" htmlUrl="%(html_url)s" xmlUrl="%(xml_url)s" />'
+   for t in tuples:
+       html = parser(user.url, convertEntities=parser.HTML_ENTITIES).contents[0]
+       if "comment" in t:
+           next
+
+       if "\"" in t: # an annoying typo in the html from a friend
+           next
+
+       if "http" in t:
+           xml = parser(t, convertEntities=parser.HTML_ENTITIES).contents[0]
+       else:
+           myxml = html + t
+           xml = parser(myxml, convertEntities=parser.HTML_ENTITIES).contents[0]
+       if xml:
+           return opml_outline_feed % {'title': user.name, 'html_url': html, 'xml_url': xml}
+       else:
+           return None
+
 def find_feed(user):
-   u = user
+   """ Takes a twitter api User object, grabs URL and then searches for feeds
+   """
    try:
-       site = urllib.urlopen(u.url)
-       tuples = detect_feeds_in_HTML(site)
-       for t in tuples:
-           html = parser(u.url, convertEntities=parser.HTML_ENTITIES).contents[0]
-           if "comment" in t:
-               next
-           if "\"" in t: # an annoying typo in the html from a friend
-               next
-           if "http" in t:
-               xml = parser(t, convertEntities=parser.HTML_ENTITIES).contents[0]
-           else:
-               myxml = html + t
-               xml = parser(myxml, convertEntities=parser.HTML_ENTITIES).contents[0]
-           print opml_outline_feed % {'title': u.name, 'html_url': html, 'xml_url': xml}
-           break
+       site = urllib.urlopen(user.url)
+       outline = process_feeds(detect_feeds_in_HTML(site), user)
+       return outline
 
    except Exception, err:
-        sys.stderr.write('ERROR: %s in %s\n' % {str(err), u.url})
+        sys.stderr.write('ERROR: %(err)s in %(url)s\n' % {'err': str(err), 'url': user.url})
         pass
 
-auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-auth.set_access_token(access_token, access_token_secret)
+def print_opml(args):
 
-api = tweepy.API(auth)
-if args.followers:
-    users = api.followers_ids()
+    auth = tweepy.OAuthHandler(args.consumer_key, args.consumer_secret)
+    auth.set_access_token(args.access_token, args.access_token_secret)
 
-if args.friends:
-    users = api.friends_ids()
+    api = tweepy.API(auth)
+    users = []
 
-if args.output:
-    sys.stdout = open(
+    if args.followers:
+        users = api.followers_ids()
 
-opml_start = """<?xml version="1.0" encoding="UTF-8"?>
-<opml version="1.1">
-<head>
-<title>People who follow me</title>
-</head>
-<body>
-<outline text="People who follow me" title="People who follow me">"""
+    if args.friends:
+        users = api.friends_ids()
 
-opml_end = """</outline>
-</body>
-</opml>"""
+    if args.output:
+        sys.stdout = open(args.output, 'w')
 
-opml_outline_feed = '<outline text="%(title)s" title="%(title)s" type="rss" version="RSS" htmlUrl="%(html_url)s" xmlUrl="%(xml_url)s" />'
+    opml_start = """<?xml version="1.0" encoding="UTF-8"?>
+    <opml version="1.1">
+    <head>
+    <title>People who follow me</title>
+    </head>
+    <body>
+    <outline text="People who follow me" title="People who follow me">"""
 
-print opml_start
-# Do this lookup in chunks of 100 because of twitter API limitations
-for c in chunks(users, 100):
-    users = api.lookup_users(c)
-    for u in users:
-        if u.url:
-           print "<!-- %s -->" % u.screen_name
-           find_feed(u)
+    opml_end = """</outline>
+    </body>
+    </opml>"""
 
-print opml_end
+    print opml_start
+
+    # Do this lookup in chunks of 100 because of twitter API limitations
+    for c in chunks(users, 100):
+        users = api.lookup_users(c)
+        for u in users:
+            if u.url:
+               print "<!-- %s -->" % u.screen_name
+               outline = find_feed(u)
+               if outline:
+                  print outline
+
+    print opml_end
+
+if __name__ == '__main__':
+
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("--followers", help="fetch follower ids and urls", action="store_true", default=False)
+    argparser.add_argument("--friends", help="fetch friend ids and urls", action="store_true", default=False)
+    argparser.add_argument("--output", help="file to write output to", action="store", default=None)
+    argparser.add_argument("--consumer_key", help="file to write output to", action="store", default=None)
+    argparser.add_argument("--consumer_secret", help="file to write output to", action="store", default=None)
+    argparser.add_argument("--access_token", help="file to write output to", action="store", default=None)
+    argparser.add_argument("--access_token_secret", help="file to write output to", action="store", default=None)
+    args = argparser.parse_args()
+
+    args.consumer_key='12Jbo5GoDxd6dq6epffIQ'
+    args.consumer_secret='00rIgEhKD944U3vt5vZdh0fXO4hEmQWY7vPOuyN7E'
+
+    args.access_token='8859592-nEVysnaIw43LbNN9OozIfgrP4HOJM5BS2m0lIZwGM'
+    args.access_token_secret='bH1QJRDKTsYymq4HOqL6XZwNMO6lTQumBphwOYPdbs'
+
+    print_opml(args)
+
