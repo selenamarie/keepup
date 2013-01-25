@@ -1,0 +1,12 @@
+opml.py has some command-line options
+
+You should be able to get started with:
+
+mkdir -p ~/ENV/keepup
+virtualenv ~/ENV/keepup
+source ~/ENV/keepup/bin/activate
+pip install -r requirements.txt
+opml.py --help
+
+Then you also need to create twitter API credentials. Below are mine from my config:
+
