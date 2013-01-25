@@ -8,5 +8,5 @@ source ~/ENV/keepup/bin/activate
 pip install -r requirements.txt
 opml.py --help
 
-Then you also need to create twitter API credentials. Below are mine from my config:
+Then you also need to create twitter API credentials. 
 
