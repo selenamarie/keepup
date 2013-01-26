@@ -1,10 +1,12 @@
 
-import opml
+
 
 from flask import Flask,url_for,redirect,session,request
 from flask_oauth import OAuth
-from flask_login import LoginManager
+from flask_login import LoginManager, login_required
 
+import opml
+from user import User
 
 app = Flask(__name__)
 login_manager = LoginManager()
@@ -28,6 +30,13 @@ twitter = oauth.remote_app('twitter',
     #file_handler.setLevel(logging.WARNING)
     #app.logger.addHandler(file_handler)
 
+# Flask-Login support
+# http://packages.python.org/Flask-Login/
+
+@login_manager.user_loader
+def load_user(userid):
+    return User.get(userid)
+
 @app.route('/oauth-authorized')
 @twitter.authorized_handler
 def oauth_authorized(resp):
@@ -45,10 +54,26 @@ def oauth_authorized(resp):
     flash('You were signed in as %s' % resp['screen_name'])
     return redirect(next_url)
 
-@app.route('/login')
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    return twitter.authorize(callback=url_for('oauth_authorized',
-        next=request.args.get('next') or request.referrer or None))
+    form = LoginForm()
+    if form.validate_on_submit():
+        # login and validate the user...
+        login_user(user)
+        flash("Logged in successfully.")
+        return redirect(request.args.get("next") or url_for("index"))
+    return render_template("login.html", form=form)
+
+@app.route("/settings")
+@login_required
+def settings():
+    pass
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(somewhere)
 
 @twitter.tokengetter
 def get_twitter_token(token=None):

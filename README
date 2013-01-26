@@ -10,3 +10,6 @@ opml.py --help
 
 Then you also need to create twitter API credentials. 
 
+
+Working on flask stuff based off of this tutorial: 
+http://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world
