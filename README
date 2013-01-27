@@ -8,8 +8,21 @@ source ~/ENV/keepup/bin/activate
 pip install -r requirements.txt
 opml.py --help
 
-Then you also need to create twitter API credentials. 
+Then you also need to create twitter API credentials.
 
 
-Working on flask stuff based off of this tutorial: 
+Working on flask stuff based off of this tutorial:
 http://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world
+
+== For the flask app ==
+
+Copy 'config.py.dist' to 'config.py'.
+
+Then, run this:
+    ./run.py
+
+For an http server on port 5000.
+
+Set up a debugging email server:
+
+    python -m smtpd -n -c DebuggingServer localhost:25
