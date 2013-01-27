@@ -20,10 +20,19 @@ def index():
             'body': 'The Avengers movie was so cool!'
         }
     ]
+    urls = [ # fake array of urls
+        {
+            'url': 'http://www.chesnok.com',
+        },
+        {
+            'url': 'http://www.chesnok.com',
+        }
+    ]
     return render_template("index.html",
         title = 'Home',
         user = user,
-        posts = posts)
+        posts = posts,
+        urls = urls)
 
 @app.route('/login', methods = ['GET', 'POST'])
 @oid.loginhandler

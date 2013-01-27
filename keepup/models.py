@@ -33,3 +33,10 @@ class Post(db.Model):
 
     def __repr__(self):
         return '<Post %r>' % (self.body)
+
+class FeedUrls(db.Model):
+    id = db.Column(db.Integer, primary_key = True)
+    url = db.Column(db.Text())
+
+    def __repr__(self):
+        return '<FeedUrls %r>' % (self.url)
