@@ -1,5 +1,5 @@
 from flask import render_template, flash, redirect
-from keepup import app, db, lm, oid
+from keepup import app, db, lm, oid, oauth, twitter
 from flask import render_template, flash, redirect, session, url_for, request, g
 from flask.ext.login import login_user, logout_user, current_user, login_required
 from models import User, ROLE_USER, ROLE_ADMIN
@@ -10,7 +10,7 @@ from forms import LoginForm, EditForm
 @app.route('/index')
 @login_required
 def index():
-    user = { 'nickname': 'Miguel' } # fake user
+    user = { 'nickname': g.user.nickname } # fake user
     posts = [ # fake array of posts
         {
             'author': { 'nickname': 'John' },
@@ -131,3 +131,14 @@ def internal_error(error):
 def internal_error(error):
     db.session.rollback()
     return render_template('500.html'), 500
+
+from flask import session
+
+@twitter.tokengetter
+def get_twitter_token(token=None):
+    token = session.get('twitter_token')
+    if token:
+        return token
+    else:
+        return
+
