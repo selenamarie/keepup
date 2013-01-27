@@ -132,8 +132,6 @@ def internal_error(error):
     db.session.rollback()
     return render_template('500.html'), 500
 
-from flask import session
-
 @twitter.tokengetter
 def get_twitter_token(token=None):
     token = session.get('twitter_token')
