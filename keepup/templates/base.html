@@ -1,17 +1,18 @@
 <html>
   <head>
     {% if title %}
-    <title>{{title}} - microblog</title>
+    <title>{{title}} - keepup</title>
     {% else %}
-    <title>microblog</title>
+    <title>keepup</title>
     {% endif %}
   </head>
   <body>
-    <div>Microblog:
+    <div>keepup:
         <a href="{{ url_for('index') }}">Home</a>
         {% if g.user.is_authenticated() %}
         | <a href="{{ url_for('user', nickname = g.user.nickname) }}">Your Profile</a>
         | <a href="{{ url_for('logout') }}">Logout</a>
+        | <a href="{{ url_for('authorize') }}">Authorize</a>
         {% endif %}
     </div>
     <hr>

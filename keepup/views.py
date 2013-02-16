@@ -2,7 +2,7 @@ from flask import render_template, flash, redirect
 from keepup import app, db, lm, oid, oauth, twitter
 from flask import render_template, flash, redirect, session, url_for, request, g
 from flask.ext.login import login_user, logout_user, current_user, login_required
-from models import User, ROLE_USER, ROLE_ADMIN
+from models import User, Post, FeedUrls, ROLE_USER, ROLE_ADMIN
 from datetime import datetime
 from forms import LoginForm, EditForm
 
@@ -67,6 +67,7 @@ def after_login(resp):
         user = User(nickname = nickname, email = resp.email, role = ROLE_USER)
         db.session.add(user)
         db.session.commit()
+        app.logger.info('commited %s' % nickname)
     remember_me = False
     if 'remember_me' in session:
         remember_me = session['remember_me']
@@ -139,4 +140,38 @@ def get_twitter_token(token=None):
         return token
     else:
         return
+
+@app.route('/authorize')
+@login_required
+def authorize():
+    return twitter.authorize(callback=url_for('oauth_authorized',
+        next=request.args.get('next') or request.referrer or None))
+
+from flask import redirect
+
+@app.route('/oauth-authorized')
+@twitter.authorized_handler
+@login_required
+def oauth_authorized(resp):
+    next_url = request.args.get('next') or url_for('index')
+    if resp is None:
+        return redirect(next_url)
+
+    this_user = User.query.filter_by(twitter_username = resp['screen_name']).first()
+    if this_user is None:
+        userid = g.user.get_id()
+        app.logger.info("Userid: %s" % userid)
+        update_account = User.query.filter_by(id = userid)
+        app.logger.info("User account: %s" % update_account.nickname)
+        update_account.twitter_username = resp['screen_name']
+        update_account.token = resp['oauth_token']
+        update_account.secret = resp['oauth_token_secret']
+        db.session.add(update_account)
+        db.session.commit()
+        # we don't allow token storage until this auth step
+        # so no 'else' needed
+    else:
+        flash('You must be logged in to authorize Twitter.')
+
+    return redirect(next_url)
 

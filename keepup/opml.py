@@ -46,6 +46,7 @@ def chunks(l, n):
     for i in xrange(0, len(l), n):
         yield l[i:i+n]
 
+
 class OPML:
 
     def process_feeds(self, tuples, user):
@@ -91,6 +92,8 @@ class OPML:
             return None
 
     def connect_api(self, args):
+    """ Initial connection to twitter with individual's access token
+    """
         auth = tweepy.OAuthHandler(args.consumer_key, args.consumer_secret)
         auth.set_access_token(args.access_token, args.access_token_secret)
 
@@ -98,6 +101,9 @@ class OPML:
         return api
 
     def extract_entity_urls(self, user):
+    """ Pass in a User object from Twitter
+        Make an array of any URLs in the User's profile
+    """
         urls = []
         print user.__getstate__()
         try:
@@ -109,7 +115,10 @@ class OPML:
         return urls
 
     def get_users(self, api, args):
-
+    """ Either:
+            If followers is true: get a list of followers for the currently logged in user
+            If friends is true: get a list of friends for the currently logged in user
+    """
         if args.followers:
             users = api.followers_ids()
 
@@ -119,15 +128,22 @@ class OPML:
         return users
 
     def get_feeds(self, api, users, args):
+    """
+        Lookup users from an array and then scrape URLs for feeds
+    """
         feeds = []
-        # TODO put these in a database
-        # Need to associate with a user
         for c in chunks(users, args.chunks):
             users = api.lookup_users(c)
             feeds = [self.find_feed(u) for u in users]
+        # TODO put these in a database
+        # Need to associate with a user
         return feeds
 
     def get_feeds_from_entities(self, api, users, args):
+    """
+        Takes a list of users
+            Connects to API for each user, and extracts URLs from each profile
+    """
         entity_urls = []
         for c in chunks(users, args.chunks):
             users = api.lookup_users(c)
@@ -144,6 +160,21 @@ class OPML:
         elif args.friends:
             args.title = "Friends"
         return args
+
+    def get_user_tweets(self):
+    """
+        Pass in:
+            * api -- Tweepy API already connected
+        pseudo code:
+            * api.home_timeline() - give us 20 most recent statuses
+            for each tweet (json, inside Tweepy):
+                * NEW FUNCTION: search for URLs in the data structure (use extract_entity_urls() as a template)
+                * https://dev.twitter.com/docs/tweet-entities - Grab urls (media_url and expanded_url from arrays and objects)
+                return an array of URLs
+        Once all URLs are collected, just print the list out from this function
+    """
+        pass
+
 
     def print_opml(self, api, args):
 

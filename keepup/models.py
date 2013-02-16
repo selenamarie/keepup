@@ -12,6 +12,15 @@ class User(db.Model):
     posts = db.relationship('Post', backref = 'author', lazy = 'dynamic')
     about_me = db.Column(db.String(140))
     last_seen = db.Column(db.DateTime)
+    twitter_username = db.Column(db.Text())
+    token = db.Column(db.Text())
+    secret = db.Column(db.Text())
+
+    def is_twitter_authorized(self):
+        if self.twitter_username and self.token and self.secret:
+            return True
+        else:
+            return False
 
     def is_authenticated(self):
         return True
