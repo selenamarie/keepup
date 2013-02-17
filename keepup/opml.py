@@ -161,7 +161,24 @@ class OPML:
             args.title = "Friends"
         return args
 
-    def get_user_tweets(self):
+    def extract_tweet_urls(self, tweet):
+    """ Pass in a tweet object from Twitter
+        Make an array of any URLs in tweet
+    """
+        tweet_urls = []
+        print tweet.__getstate__()
+        try:
+            if tweet.entities.urls.expanded_url:
+                for u in tweet.entities.urls.expanded_url:
+                    tweet_urls.append(u.url)
+            if tweet.entities.urls.media_url:
+                for m in tweet.entities.urls.media_url:
+                    tweet_urls.append(u.url)
+        except:
+            return tweet_urls
+        return tweet_urls
+
+    def get_user_tweets(self, api):
     """
         Pass in:
             * api -- Tweepy API already connected
@@ -173,6 +190,11 @@ class OPML:
                 return an array of URLs
         Once all URLs are collected, just print the list out from this function
     """
+        tweets = api.home_timeline()
+
+        if tweets:
+            links = [url for tweet in tweets for url in self.extract_tweet_urls(tweet)]
+        print links
         pass
 
 
