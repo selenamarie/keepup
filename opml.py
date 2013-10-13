@@ -7,6 +7,7 @@ import sys
 import argparse
 import ConfigParser
 import os
+import unicodedata
 
 import socket
 socket.setdefaulttimeout(10)
@@ -145,6 +146,44 @@ class OPML:
             args.title = "Friends"
         return args
 
+    def follow_women(self, api, args):
+        with open(args.to_follow) as f:
+            people_to_follow = [x.strip() for x in f.readlines()]
+        for person in people_to_follow:
+            try:
+                api.create_friendship(person)
+            except:
+                # tweepy.error.TweepError: [{u'message': u"You've already requested to follow Pia_Gen", u'code': 160}]
+                error = tweepy.error.TweepError
+                print error
+
+    def find_women(self, api, args):
+        users = self.get_users(api, args)
+        userids = []
+
+        for c in chunks(users, args.chunks):
+            users = api.lookup_users(c)
+
+            for user in users:
+                name = unicodedata.normalize('NFKD', user.name).encode('ascii','ignore')
+                screen_name = unicodedata.normalize('NFKD', user.screen_name).encode('ascii','ignore')
+                print ','.join([screen_name, name])
+
+    def update_list(self, api, args):
+        with open(args.update_list) as f:
+            people_to_follow = [x.strip() for x in f.readlines()]
+
+        #mylist = api.get_list()
+        mylist = api.get_list(owner_screen_name='selenamarie', slug='womentofollow')
+        print "%r" % mylist.id
+        for person in people_to_follow:
+            try:
+                api.add_list_member(list_id=mylist.id, screen_name=person)
+            except:
+                # tweepy.error.TweepError: [{u'message': u"You've already requested to follow Pia_Gen", u'code': 160}]
+                #error = tweepy.error.TweepError
+                raise
+
     def print_opml(self, api, args):
 
         print "getting users"
@@ -210,6 +249,9 @@ if __name__ == '__main__':
     argparser.add_argument("--chunks", help="chunks of users to query", action="store", default=100, type=int)
     argparser.add_argument("--stop-after", help="number of users to stop after", action="store", default=None, type=int)
     argparser.add_argument("--title", help="title for OPML file", action="store", default=None)
+    argparser.add_argument("--to_follow", help="file of people to follow", action="store", default=None)
+    argparser.add_argument("--all_followers", help="file of people to follow", action="store_true", default=False)
+    argparser.add_argument("--update_list", help="file of people to follow", action="store", default=False)
     argparser.set_defaults(**defaults)
     args = argparser.parse_args(remaining_argv)
 
@@ -224,5 +266,11 @@ if __name__ == '__main__':
 
     print "trying to print opml"
     # Print the OPML file
-    opml.print_opml(api, args)
+    #opml.print_opml(api, args)
 
+    if args.to_follow is not None:
+        opml.follow_women(api, args)
+    elif args.all_followers is True:
+        opml.find_women(api, args)
+    elif args.update_list is not None:
+        opml.update_list(api, args)
