@@ -146,6 +146,17 @@ class OPML:
             args.title = "Friends"
         return args
 
+    def unfollow(self, api, args):
+        with open(args.to_unfollow) as f:
+            people_to_unfollow = [x.strip() for x in f.readlines()]
+        for person in people_to_follow:
+            try:
+                api.destroy_friendship(person)
+            except:
+                # tweepy.error.TweepError: [{u'message': u"You've already requested to follow Pia_Gen", u'code': 160}]
+                error = tweepy.error.TweepError
+                print error
+
     def follow_women(self, api, args):
         with open(args.to_follow) as f:
             people_to_follow = [x.strip() for x in f.readlines()]
@@ -247,11 +258,13 @@ if __name__ == '__main__':
     argparser.add_argument("--access_token", help="Twitter access token", action="store", default=None)
     argparser.add_argument("--access_token_secret", help="Twitter access token secret for user", action="store", default=None)
     argparser.add_argument("--chunks", help="chunks of users to query", action="store", default=100, type=int)
-    argparser.add_argument("--stop-after", help="number of users to stop after", action="store", default=None, type=int)
+    argparser.add_argument("--stop_after", help="number of users to stop after", action="store", default=None, type=int)
     argparser.add_argument("--title", help="title for OPML file", action="store", default=None)
     argparser.add_argument("--to_follow", help="file of people to follow", action="store", default=None)
+    argparser.add_argument("--to_unfollow", help="file of people to follow", action="store", default=None)
     argparser.add_argument("--all_followers", help="file of people to follow", action="store_true", default=False)
     argparser.add_argument("--update_list", help="file of people to follow", action="store", default=False)
+    argparser.add_argument("--get_friends", help="fetch all friend nicknames", action="store_true", default=False)
     argparser.set_defaults(**defaults)
     args = argparser.parse_args(remaining_argv)
 
@@ -268,9 +281,16 @@ if __name__ == '__main__':
     # Print the OPML file
     #opml.print_opml(api, args)
 
-    if args.to_follow is not None:
+    if args.get_friends is True:
+        args.friends = True
+        users =  opml.get_users(api, args)
+        for user in users:
+            print user
+    elif args.to_follow is not None:
         opml.follow_women(api, args)
     elif args.all_followers is True:
         opml.find_women(api, args)
     elif args.update_list is not None:
         opml.update_list(api, args)
+    elif args.to_unfollow is not None:
+        opml.unfollow(api, args)
