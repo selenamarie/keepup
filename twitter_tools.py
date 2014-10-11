@@ -95,7 +95,7 @@ class OPML:
         auth = tweepy.OAuthHandler(args.consumer_key, args.consumer_secret)
         auth.set_access_token(args.access_token, args.access_token_secret)
 
-        api = tweepy.API(auth)
+        api = tweepy.API(auth, secure=True)
         return api
 
     def extract_entity_urls(self, user):
