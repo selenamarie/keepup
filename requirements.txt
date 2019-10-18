@@ -12,7 +12,7 @@ Jinja2==2.6
 SQLAlchemy==0.7.9
 Tempita==0.5.1
 WTForms==1.0.3
-Werkzeug==0.8.3
+Werkzeug==0.15.3
 Whoosh==2.4.1
 argparse==1.2.1
 blinker==1.2
